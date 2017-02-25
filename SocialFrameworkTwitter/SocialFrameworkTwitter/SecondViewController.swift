@@ -23,7 +23,7 @@ class SecondViewController: UIViewController, UITableViewDataSource, UITableView
     override func viewDidLoad() {
         super.viewDidLoad()
         refreshControl = UIRefreshControl()
-        refreshControl.addTarget(self, action: "refreshTimeLine:", forControlEvents: UIControlEvents.ValueChanged)
+        refreshControl.addTarget(self, action: #selector(refreshTimeLine), for: UIControlEvents.valueChanged)
         self.refreshTimeLine()
     }
 
@@ -32,28 +32,27 @@ class SecondViewController: UIViewController, UITableViewDataSource, UITableView
     }
     
     func refreshTimeLine(){
-            if(SLComposeViewController.isAvailableForServiceType(SLServiceTypeTwitter)){
+            if(SLComposeViewController.isAvailable(forServiceType: SLServiceTypeTwitter)){
             let accountStore = ACAccountStore()
-            let accountType = accountStore.accountTypeWithAccountTypeIdentifier(ACAccountTypeIdentifierTwitter)
-            accountStore.requestAccessToAccountsWithType(accountType, options: nil, completion: {(granted,error) in
+            let accountType = accountStore.accountType(withAccountTypeIdentifier: ACAccountTypeIdentifierTwitter)
+            accountStore.requestAccessToAccounts(with: accountType, options: nil, completion: {(granted,error) in
             if(granted==true){
-            let arrayOfAccounts = accountStore.accountsWithAccountType(accountType)
-            let tempAccount = arrayOfAccounts.last as! ACAccount
-            let tweetURL = NSURL(string: "https://api.twitter.com/1.1/statuses/home_timeline.json")
-            let tweetRequest = SLRequest(forServiceType:SLServiceTypeTwitter, requestMethod: SLRequestMethod.GET, URL: tweetURL, parameters: nil)
-            tweetRequest.account = tempAccount
-            tweetRequest.performRequestWithHandler({(responseData,urlResponse,error) in
+            let arrayOfAccounts = accountStore.accounts(with: accountType)
+            let tempAccount = arrayOfAccounts?.last as! ACAccount
+            let tweetURL = URL(string: "https://api.twitter.com/1.1/statuses/home_timeline.json")
+            let tweetRequest = SLRequest(forServiceType:SLServiceTypeTwitter, requestMethod: SLRequestMethod.GET, url: tweetURL, parameters: nil)
+            tweetRequest?.account = tempAccount
+            tweetRequest?.perform(handler: {(responseData,urlResponse,error) in
             if(error == nil){
                 
                 let responseJSON: NSArray?
                 
                 do {
-                    responseJSON = try NSJSONSerialization.JSONObjectWithData(responseData, options: NSJSONReadingOptions.AllowFragments) as? NSArray
+                    responseJSON = try JSONSerialization.jsonObject(with: responseData!, options: JSONSerialization.ReadingOptions.allowFragments) as? NSArray
                     
                     self.tweetsArray = responseJSON!
                     self.imageDictionary = NSMutableDictionary()
-                    dispatch_async(dispatch_get_main_queue(),
-                    {self.table.reloadData()})
+                    DispatchQueue.main.async(execute: {self.table.reloadData()})
                     
                 } catch _ {
                     print("JSON ERROR ")
@@ -78,13 +77,13 @@ class SecondViewController: UIViewController, UITableViewDataSource, UITableView
             refreshControl.endRefreshing()
     }
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return self.tweetsArray.count;
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier("timelineCell") as! TimelineCell
-        let currentTweet = self.tweetsArray.objectAtIndex(indexPath.row) as! NSDictionary
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "timelineCell") as! TimelineCell
+        let currentTweet = self.tweetsArray.object(at: indexPath.row) as! NSDictionary
         let currentUser = currentTweet["user"] as! NSDictionary
         cell.userNameLabel!.text = currentUser["name"] as? String
         cell.tweetlabel!.text = currentTweet["text"] as! String
@@ -92,11 +91,11 @@ class SecondViewController: UIViewController, UITableViewDataSource, UITableView
         if((self.imageDictionary[userName!]) != nil){
         cell.userImageView.image = (self.imageDictionary[userName!] as! UIImage)
     } else{
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), {
-        let imageURL = NSURL(string: currentUser.objectForKey("profile_image_url") as! String)
-        let imageData = NSData(contentsOfURL: imageURL!)
-        self.imageDictionary.setObject(UIImage(data: imageData!)!, forKey: userName!)
-        (dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), {
+        DispatchQueue.global(priority: DispatchQueue.GlobalQueuePriority.default).async(execute: {
+        let imageURL = URL(string: currentUser.object(forKey: "profile_image_url") as! String)
+        let imageData = try? Data(contentsOf: imageURL!)
+        self.imageDictionary.setObject(UIImage(data: imageData!)!, forKey: userName! as NSCopying)
+        (DispatchQueue.global(priority: DispatchQueue.GlobalQueuePriority.default), {
         cell.userImageView.image = (self.imageDictionary[cell.userNameLabel.text!] as! UIImage)
         })
         }) }
