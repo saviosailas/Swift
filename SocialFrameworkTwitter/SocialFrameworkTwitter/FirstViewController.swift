@@ -52,7 +52,8 @@ class FirstViewController: UIViewController, UITextFieldDelegate {
         super.didReceiveMemoryWarning()
     }
     
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool // called when 'return' key pressed. return NO to ignore.
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool
+        // called when 'return' key pressed. return NO to ignore.
     {
         textField.resignFirstResponder()
         return true;
@@ -98,7 +99,7 @@ class FirstViewController: UIViewController, UITextFieldDelegate {
                             } })
                 }) }
     } else {
-    print("No access granted")
+            print("No access granted")
     }
     }) }
 
