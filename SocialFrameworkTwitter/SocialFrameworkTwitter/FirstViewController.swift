@@ -20,9 +20,8 @@ class FirstViewController: UIViewController, UITextFieldDelegate {
     
     @IBAction func update(_ sender: UIButton) {
         if(labelUserName.text != ""){
-            checkUser() //method implemented after
-        }
-            else { print("Enter a name!") }
+            checkUser()
+        } else { print("Enter a name!") }
     }
     
     @IBAction func sendTweet(_ sender: UIButton) {
